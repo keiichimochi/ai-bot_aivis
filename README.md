@@ -4,12 +4,15 @@
 
 ## 機能
 
-- 💬 Gemini AIによるチャット機能
+- 💬 Gemini AIによる自然な会話
 - 🎤 Aivis Speechによる音声合成
 - 🔊 ブラウザでの音声再生
 - 👥 複数の音声キャラクター
 - 🎯 キャラクターごとの性格設定
 - 🔄 自動再生機能
+- 📱 モバイルファーストデザイン
+- ⌨️ エンターキーでの送信対応
+- 🌐 Tailscale経由でのアクセス対応
 
 ## デモ画面
 
@@ -20,6 +23,7 @@
 - Python 3.8以上
 - Aivis Speech サーバー
 - Gemini AI API キー
+- Tailscale（リモートアクセス用・オプション）
 
 ## セットアップ
 
@@ -37,7 +41,7 @@ uv venv
 
 3. 必要なパッケージをインストール：
 ```bash
-uv pip install flask python-dotenv google-generativeai requests
+uv pip install -r requirements.txt
 ```
 
 4. 環境変数の設定：
@@ -52,11 +56,12 @@ GEMINI_API_KEY=your_api_key_here
 
 2. アプリケーションを起動：
 ```bash
-python app.py
+python main.py
 ```
 
 3. ブラウザでアクセス：
-http://localhost:5000
+   - ローカル: `http://localhost:5000`
+   - Tailscale経由: `http://[Tailscaleアドレス]:5000`
 
 ## 実装済み機能
 
@@ -83,6 +88,8 @@ http://localhost:5000
   - 音声モデルのドロップダウン
   - 再生状態の視覚的フィードバック
   - スクロール自動調整
+  - モバイルファースト対応
+  - エンターキー送信
 
 ## 今後の予定
 
@@ -96,9 +103,10 @@ http://localhost:5000
 ## 技術スタック
 
 - バックエンド
-  - Flask
+  - FastAPI
   - Gemini AI API
   - Aivis Speech API
+  - uvicorn
 
 - フロントエンド
   - HTML/CSS/JavaScript
