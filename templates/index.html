@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Bot</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chat-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 70%;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: auto;
+        }
+        .ai-message {
+            background-color: #f5f5f5;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .voice-settings {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .voice-settings select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-right: 10px;
+            min-width: 200px;
+        }
+        .voice-settings label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #1976d2;
+        }
+        .audio-control {
+            margin-top: 5px;
+        }
+        optgroup {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Chat Bot</h1>
+    <div class="voice-settings">
+        <label for="voice-select">音声モデル:</label>
+        <select id="voice-select">
+            <optgroup label="korosuke">
+                <option value="488039072" selected>ノーマル</option>
+            </optgroup>
+            <optgroup label="Anneli">
+                <option value="888753760">ノーマル</option>
+                <option value="888753761">通常</option>
+                <option value="888753762">テンション高め</option>
+                <option value="888753763">落ち着き</option>
+                <option value="888753764">上機嫌</option>
+                <option value="888753765">怒り・悲しみ</option>
+            </optgroup>
+            <optgroup label="sakuragi">
+                <option value="269244800">ノーマル</option>
+            </optgroup>
+            <optgroup label="yamaoka">
+                <option value="1342155808">ノーマル</option>
+            </optgroup>
+        </select>
+    </div>
+    <div class="chat-container" id="chat-container"></div>
+    <div class="input-container">
+        <input type="text" id="user-input" placeholder="メッセージを入力..." autocomplete="off">
+        <button onclick="sendMessage()">送信</button>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const voiceSelect = document.getElementById('voice-select');
+        let isPlaying = false;  // 音声再生中かどうかのフラグ
+
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function addMessage(message, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function playAudio(audioData) {
+            console.log('音声データを再生中...');
+            console.log('音声データの長さ:', audioData.length);
+
+            // Blob形式で音声データを作成
+            const byteCharacters = atob(audioData);
+            const byteNumbers = new Array(byteCharacters.length);
+            
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(blob);
+            
+            const audio = new Audio(audioUrl);
+            
+            // 音声の再生が終わるまで待機
+            await new Promise((resolve, reject) => {
+                audio.onloadeddata = () => {
+                    console.log('音声データのロード完了');
+                    console.log('音声の長さ:', audio.duration, '秒');
+                };
+                
+                audio.onended = () => {
+                    console.log('音声の再生完了');
+                    URL.revokeObjectURL(audioUrl);
+                    resolve();
+                };
+                
+                audio.onerror = (error) => {
+                    console.error('音声の読み込みエラー:', error);
+                    URL.revokeObjectURL(audioUrl);
+                    reject(error);
+                };
+
+                audio.play().catch(error => {
+                    console.error('音声の再生エラー:', error);
+                    URL.revokeObjectURL(audioUrl);
+                    reject(error);
+                });
+            });
+        }
+
+        let audioQueue = [];  // 音声キュー
+        let isProcessingQueue = false;  // キュー処理中フラグ
+
+        // キューの処理
+        async function processAudioQueue() {
+            if (isProcessingQueue) {
+                console.log('キューの処理中...');
+                return;
+            }
+            
+            try {
+                isProcessingQueue = true;
+                console.log('キューの処理を開始:', audioQueue.length, '個の音声データ');
+                
+                while (audioQueue.length > 0) {
+                    const audioData = audioQueue[0];  // キューの先頭を参照
+                    try {
+                        await playAudio(audioData);
+                        audioQueue.shift();  // 再生完了後に削除
+                    } catch (error) {
+                        console.error('音声の再生に失敗:', error);
+                        audioQueue.shift();  // エラー時も次に進む
+                    }
+                }
+            } finally {
+                isProcessingQueue = false;
+                console.log('キューの処理完了');
+            }
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            const selectedVoice = voiceSelect.value;
+            addMessage(message, true);
+            userInput.value = '';
+
+            try {
+                console.log('サーバーにリクエスト送信中...');
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        message: message,
+                        voice_id: parseInt(selectedVoice)
+                    })
+                });
+
+                console.log('サーバーからレスポンス受信');
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('サーバーエラー:', data.error);
+                    addMessage('音声の生成中にエラーが発生しました。', false);
+                    return;
+                }
+                
+                console.log('AIの応答:', data.message);
+                addMessage(data.message, false);
+
+                if (data.audio) {
+                    console.log('音声データのサイズ:', data.audio.length);
+                    console.log('Content-Type:', data.content_type);
+                    // 音声データをキューに追加
+                    audioQueue.push(data.audio);
+                    // キューの処理を開始
+                    processAudioQueue();
+                }
+
+            } catch (error) {
+                console.error('エラー:', error);
+                addMessage('エラーが発生しました。', false);
+            }
+        }
+    </script>
+</body>
+</html> 
