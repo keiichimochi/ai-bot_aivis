@@ -27,6 +27,7 @@
             padding: 10px;
             border-radius: 10px;
             max-width: 70%;
+            position: relative;
         }
         .user-message {
             background-color: #e3f2fd;
@@ -35,11 +36,6 @@
         .ai-message {
             background-color: #f5f5f5;
         }
-        .input-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
         .voice-settings {
             background-color: white;
             padding: 15px;
@@ -47,29 +43,12 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .voice-settings select {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            margin-right: 10px;
-            min-width: 200px;
-        }
-        .voice-settings label {
-            margin-right: 10px;
-            font-weight: bold;
-        }
-        /* トグルスイッチのスタイル */
         .toggle-switch {
             position: relative;
             display: inline-block;
             width: 60px;
             height: 34px;
             vertical-align: middle;
-        }
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
         }
         .toggle-slider {
             position: absolute;
@@ -82,26 +61,8 @@
             transition: .4s;
             border-radius: 34px;
         }
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
         input:checked + .toggle-slider {
             background-color: #4CAF50;
-        }
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-        .toggle-label {
-            margin-left: 10px;
-            vertical-align: middle;
         }
         input[type="text"] {
             flex-grow: 1;
@@ -118,15 +79,6 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-        }
-        button:hover {
-            background-color: #1976d2;
-        }
-        .audio-control {
-            margin-top: 5px;
-        }
-        optgroup {
-            font-weight: bold;
         }
     </style>
 </head>
@@ -165,202 +117,131 @@
         <button onclick="sendMessage()">送信</button>
     </div>
 
+    <audio id="audioPlayer" playsinline></audio>
+
     <script>
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const voiceSelect = document.getElementById('voice-select');
-        const autoPlayToggle = document.getElementById('auto-play-toggle');
-        let isPlaying = false;  // 音声再生中かどうかのフラグ
-        let hasUserEnabledAudio = false;  // ユーザーが音声を有効にしたかどうか
+        const chatContainer = document.getElementById("chat-container");
+        const userInput = document.getElementById("user-input");
+        const voiceSelect = document.getElementById("voice-select");
+        const autoPlayToggle = document.getElementById("auto-play-toggle");
+        const audioPlayer = document.getElementById("audioPlayer");
+        let audioQueue = [];
+        let isPlaying = false;
+        let hasUserEnabledAudio = false;
 
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        function addMessage(message, isUser) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-            messageDiv.textContent = message;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        async function playAudio(audioData) {
-            console.log('音声データを再生中...');
-            console.log('音声データの長さ:', audioData.length);
-
-            // Blob形式で音声データを作成
-            const byteCharacters = atob(audioData);
-            const byteNumbers = new Array(byteCharacters.length);
-            
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(blob);
-            
-            const audio = new Audio(audioUrl);
-            
-            // 音声の再生が終わるまで待機
-            await new Promise((resolve, reject) => {
-                audio.onloadeddata = () => {
-                    console.log('音声データのロード完了');
-                    console.log('音声の長さ:', audio.duration, '秒');
-                };
-                
-                audio.onended = () => {
-                    console.log('音声の再生完了');
-                    URL.revokeObjectURL(audioUrl);
-                    resolve();
-                };
-                
-                audio.onerror = (error) => {
-                    console.error('音声の読み込みエラー:', error);
-                    URL.revokeObjectURL(audioUrl);
-                    reject(error);
-                };
-
-                audio.play().catch(error => {
-                    console.error('音声の再生エラー:', error);
-                    URL.revokeObjectURL(audioUrl);
-                    reject(error);
-                });
-            });
-        }
-
-        let audioQueue = [];  // 音声キュー
-        let isProcessingQueue = false;  // キュー処理中フラグ
-
-        // キューの処理
-        async function processAudioQueue() {
-            if (isProcessingQueue) {
-                console.log('キューの処理中...');
-                return;
-            }
-            
-            try {
-                isProcessingQueue = true;
-                console.log('キューの処理を開始:', audioQueue.length, '個の音声データ');
-                
-                while (audioQueue.length > 0) {
-                    const audioData = audioQueue[0];  // キューの先頭を参照
-                    try {
-                        await playAudio(audioData);
-                        audioQueue.shift();  // 再生完了後に削除
-                    } catch (error) {
-                        console.error('音声の再生に失敗:', error);
-                        audioQueue.shift();  // エラー時も次に進む
-                    }
-                }
-            } finally {
-                isProcessingQueue = false;
-                console.log('キューの処理完了');
-            }
-        }
-
-        // ピコ音を生成する関数
+        // ピコ音を生成し、音声再生許可を取得する関数
         async function createPicoSound() {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
-                
-                // 高めの周波数で短いピコ音を生成
-                oscillator.frequency.value = 1000;  // 1000Hz
-                gainNode.gain.value = 0.1;  // 音量を小さめに
-                
-                // 音量の制御（エンベロープ）
+
+                oscillator.frequency.value = 1000;
+                gainNode.gain.value = 0.1;
+
                 gainNode.gain.setValueAtTime(0, audioContext.currentTime);
                 gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
                 gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
-                
+
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
-                
-                // 0.05秒だけ再生
+
                 oscillator.start();
                 await new Promise(resolve => setTimeout(resolve, 50));
                 oscillator.stop();
-                
-                return true;
+
+                await enableAudioPlayback();
+                hasUserEnabledAudio = true;
+                console.log("ユーザーが音声再生を許可しました！");
             } catch (error) {
-                console.error('ピコ音の再生に失敗:', error);
-                return false;
+                console.error("ピコ音の再生に失敗:", error);
             }
         }
 
-        // トグルスイッチの状態変更を監視
-        autoPlayToggle.addEventListener('change', async function() {
+        async function enableAudioPlayback() {
+            audioPlayer.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+            try {
+                await audioPlayer.play();
+                console.log("無音再生成功");
+            } catch (e) {
+                console.error("無音再生失敗:", e);
+            }
+        }
+
+        autoPlayToggle.addEventListener("change", async function () {
             if (this.checked && !hasUserEnabledAudio) {
-                console.log('音声自動再生の有効化を試みています...');
-                
-                // ピコ音を再生して自動再生制限を解除
-                const success = await createPicoSound();
-                
-                if (success) {
-                    hasUserEnabledAudio = true;
-                    console.log('ユーザーが音声自動再生を有効化しました');
-                } else {
-                    // 失敗した場合はトグルを元に戻す
-                    this.checked = false;
-                    console.log('音声自動再生の有効化に失敗しました');
-                }
+                await createPicoSound();
             }
         });
+
+        function addMessage(message, isUser, audioSegments = null) {
+            const messageDiv = document.createElement("div");
+            messageDiv.className = `message ${isUser ? "user-message" : "ai-message"}`;
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            if (!isUser && audioSegments && audioSegments.length > 0) {
+                audioQueue.push(...audioSegments);
+                processAudioQueue();
+            }
+        }
+
+        async function processAudioQueue() {
+            if (isPlaying || audioQueue.length === 0) return;
+            isPlaying = true;
+
+            while (audioQueue.length > 0) {
+                const audioData = audioQueue.shift();
+                await playAudio(audioData);
+            }
+
+            isPlaying = false;
+        }
+
+        async function playAudio(audioData) {
+            return new Promise((resolve, reject) => {
+                const byteArray = new Uint8Array(atob(audioData).split("").map(c => c.charCodeAt(0)));
+                const blob = new Blob([byteArray], { type: "audio/wav" });
+                const audioUrl = URL.createObjectURL(blob);
+                audioPlayer.src = audioUrl;
+
+                audioPlayer.onended = () => {
+                    URL.revokeObjectURL(audioUrl);
+                    resolve();
+                };
+
+                audioPlayer.onerror = (e) => {
+                    console.error("音声エラー:", e);
+                    URL.revokeObjectURL(audioUrl);
+                    reject(e);
+                };
+
+                audioPlayer.play().catch(reject);
+            });
+        }
 
         async function sendMessage() {
             const message = userInput.value.trim();
             if (!message) return;
 
-            const selectedVoice = voiceSelect.value;
             addMessage(message, true);
-            userInput.value = '';
+            userInput.value = "";
 
             try {
-                console.log('サーバーにリクエスト送信中...');
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        message: message,
-                        voice_id: parseInt(selectedVoice)
-                    })
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message, voice_id: parseInt(voiceSelect.value) })
                 });
 
-                console.log('サーバーからレスポンス受信');
                 const data = await response.json();
-                
-                if (data.error) {
-                    console.error('サーバーエラー:', data.error);
-                    addMessage('音声の生成中にエラーが発生しました。', false);
-                    return;
-                }
-                
-                console.log('AIの応答:', data.message);
-                addMessage(data.message, false);
-
-                if (data.audio) {
-                    console.log('音声データのサイズ:', data.audio.length);
-                    console.log('Content-Type:', data.content_type);
-                    // 音声データをキューに追加
-                    audioQueue.push(data.audio);
-                    // 自動再生がオンで、ユーザーが有効化している場合のみ自動再生
-                    if (autoPlayToggle.checked && hasUserEnabledAudio) {
-                        processAudioQueue();
-                    }
-                }
-
+                addMessage(data.message, false, data.audio_segments);
             } catch (error) {
-                console.error('エラー:', error);
-                addMessage('エラーが発生しました。', false);
+                console.error("エラー:", error);
+                addMessage("エラーが発生しました。", false);
             }
         }
     </script>
 </body>
-</html> 
+</html>
