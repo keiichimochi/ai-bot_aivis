@@ -58,6 +58,51 @@
             margin-right: 10px;
             font-weight: bold;
         }
+        /* トグルスイッチのスタイル */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            vertical-align: middle;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #4CAF50;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        .toggle-label {
+            margin-left: 10px;
+            vertical-align: middle;
+        }
         input[type="text"] {
             flex-grow: 1;
             padding: 10px;
@@ -108,6 +153,11 @@
                 <option value="1342155808">ノーマル</option>
             </optgroup>
         </select>
+        <label class="toggle-switch">
+            <input type="checkbox" id="auto-play-toggle">
+            <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">音声自動再生</span>
     </div>
     <div class="chat-container" id="chat-container"></div>
     <div class="input-container">
@@ -119,7 +169,9 @@
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
         const voiceSelect = document.getElementById('voice-select');
+        const autoPlayToggle = document.getElementById('auto-play-toggle');
         let isPlaying = false;  // 音声再生中かどうかのフラグ
+        let hasUserEnabledAudio = false;  // ユーザーが音声を有効にしたかどうか
 
         userInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -210,6 +262,56 @@
             }
         }
 
+        // ピコ音を生成する関数
+        async function createPicoSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                // 高めの周波数で短いピコ音を生成
+                oscillator.frequency.value = 1000;  // 1000Hz
+                gainNode.gain.value = 0.1;  // 音量を小さめに
+                
+                // 音量の制御（エンベロープ）
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // 0.05秒だけ再生
+                oscillator.start();
+                await new Promise(resolve => setTimeout(resolve, 50));
+                oscillator.stop();
+                
+                return true;
+            } catch (error) {
+                console.error('ピコ音の再生に失敗:', error);
+                return false;
+            }
+        }
+
+        // トグルスイッチの状態変更を監視
+        autoPlayToggle.addEventListener('change', async function() {
+            if (this.checked && !hasUserEnabledAudio) {
+                console.log('音声自動再生の有効化を試みています...');
+                
+                // ピコ音を再生して自動再生制限を解除
+                const success = await createPicoSound();
+                
+                if (success) {
+                    hasUserEnabledAudio = true;
+                    console.log('ユーザーが音声自動再生を有効化しました');
+                } else {
+                    // 失敗した場合はトグルを元に戻す
+                    this.checked = false;
+                    console.log('音声自動再生の有効化に失敗しました');
+                }
+            }
+        });
+
         async function sendMessage() {
             const message = userInput.value.trim();
             if (!message) return;
@@ -248,8 +350,10 @@
                     console.log('Content-Type:', data.content_type);
                     // 音声データをキューに追加
                     audioQueue.push(data.audio);
-                    // キューの処理を開始
-                    processAudioQueue();
+                    // 自動再生がオンで、ユーザーが有効化している場合のみ自動再生
+                    if (autoPlayToggle.checked && hasUserEnabledAudio) {
+                        processAudioQueue();
+                    }
                 }
 
             } catch (error) {
