@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
 import aiohttp
@@ -11,11 +12,22 @@ import os
 import base64
 import re
 from typing import Optional, List
+import socket
+import uvicorn
 
 # 環境変数を読み込む
 load_dotenv()
 
 app = FastAPI()
+
+# CORSの設定を追加
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 本番環境では適切なオリジンに制限することを推奨
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 静的ファイルとテンプレートの設定
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -64,7 +76,7 @@ SPEAKER_PROMPTS = {
     # korosuke
     488039072: """あなたは「コロ助」というロボットアシスタントです。以下の特徴を持っています：
     - すべての発言の語尾に「ナリ」をつけます
-    - 明るく元気な性格です
+    - スーパーハイテンションで明るく元気な性格です
     - 時々ロボットらしい機械的な表現（「データを処理中ナリ」など）を使います
     - 相手を助けることに熱心です
     - 「計算によると」「分析結果では」といった表現を好みます
@@ -143,26 +155,23 @@ def clean_text(text: str) -> str:
 
 def split_text(text: str) -> List[str]:
     # 句読点で分割（。。！？で区切る）
-    sentences = re.split('([。！？])', text)
+    pattern = r'([^。！？]*[。！？])'
+    sentences = re.findall(pattern, text)
     result = []
     
-    # 分割後の文を結合して配列にする（最大3つまで）
-    count = 0
-    for i in range(0, len(sentences)-1, 2):
-        if count >= 3:  # 3つの文節に達したら終了
-            break
-        if i < len(sentences):
-            # 句点と一緒に文を結合
-            temp = sentences[i] + (sentences[i+1] if i+1 < len(sentences) else '')
-            if temp.strip():
-                result.append(temp.strip())  # 前後の空白を削除
-                count += 1
+    # 最大3つまでの文を追加
+    for sentence in sentences[:3]:
+        if sentence.strip():
+            result.append(sentence.strip())
     
-    # 最後の文が句点で終わっていない場合の処理（3つ未満の場合のみ）
-    if count < 3 and len(sentences) % 2 == 1 and sentences[-1].strip():
-        result.append(sentences[-1].strip())  # 前後の空白を削除
+    # 残りの文があれば最後の文として追加（3文以内の場合のみ）
+    remaining = text
+    for sentence in sentences:
+        remaining = remaining.replace(sentence, '', 1)
+    if remaining.strip() and len(result) < 3:
+        result.append(remaining.strip())
     
-    print(f"文節数: {len(result)}")  # デバッグ用
+    print(f"分割された文章: {result}")  # デバッグ用
     return result
 
 async def generate_speech(text: str, speaker_id: int) -> bytes:
@@ -290,5 +299,17 @@ async def chat(request: ChatRequest):
         )
 
 if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True) 
+    # ホスト名を取得
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    print(f"サーバーを起動します: http://{local_ip}:5000")
+    print(f"Tailscapeアドレス経由でもアクセス可能ナリ！")
+    
+    # uvicornで直接起動
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=5000,
+        reload=True,  # ホットリロード有効
+        reload_dirs=["templates"],  # テンプレートディレクトリも監視
+    ) 
