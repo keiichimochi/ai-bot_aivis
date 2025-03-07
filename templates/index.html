@@ -204,20 +204,40 @@
                 const byteArray = new Uint8Array(atob(audioData).split("").map(c => c.charCodeAt(0)));
                 const blob = new Blob([byteArray], { type: "audio/wav" });
                 const audioUrl = URL.createObjectURL(blob);
+                
+                // 前の音声のURLを解放する前に新しいURLを設定
+                const oldUrl = audioPlayer.src;
                 audioPlayer.src = audioUrl;
+                
+                // 音声の読み込みが完了したら再生開始
+                audioPlayer.onloadeddata = () => {
+                    audioPlayer.play().catch(e => {
+                        console.error("音声再生エラー:", e);
+                        reject(e);
+                    });
+                };
 
+                // 音声再生完了時の処理
                 audioPlayer.onended = () => {
-                    URL.revokeObjectURL(audioUrl);
-                    resolve();
+                    console.log("音声再生完了");
+                    // 少し待ってからリソース解放
+                    setTimeout(() => {
+                        if (oldUrl && oldUrl.startsWith('blob:')) {
+                            URL.revokeObjectURL(oldUrl);
+                        }
+                        URL.revokeObjectURL(audioUrl);
+                        resolve();
+                    }, 100); // 100ms待機
                 };
 
                 audioPlayer.onerror = (e) => {
                     console.error("音声エラー:", e);
+                    if (oldUrl && oldUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(oldUrl);
+                    }
                     URL.revokeObjectURL(audioUrl);
                     reject(e);
                 };
-
-                audioPlayer.play().catch(reject);
             });
         }
 
@@ -242,6 +262,14 @@
                 addMessage("エラーが発生しました。", false);
             }
         }
+
+        // エンターキーでメッセージを送信
+        userInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); // フォーム送信を防止
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>
