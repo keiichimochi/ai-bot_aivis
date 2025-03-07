@@ -6,7 +6,7 @@
 
 - 💬 Gemini AIによる自然な会話
 - 🎤 Aivis Speechによる音声合成
-- 🔊 ブラウザでの音声再生
+- 🔊 ブラウザでの音声再生（安定性向上）
 - 👥 複数の音声キャラクター
 - 🎯 キャラクターごとの性格設定
 - 🔄 自動再生機能
@@ -29,14 +29,14 @@
 
 1. リポジトリをクローン：
 ```bash
-git clone https://github.com/yourusername/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/keiichimochi/ai-bot_aivis.git
+cd ai-bot_aivis
 ```
 
 2. 仮想環境を作成して有効化：
 ```bash
 uv venv
-.venv\Scripts\activate
+source .venv/bin/activate  # Linuxの場合
 ```
 
 3. 必要なパッケージをインストール：
@@ -45,7 +45,7 @@ uv pip install -r requirements.txt
 ```
 
 4. 環境変数の設定：
-`.env`ファイルを作成し、以下の内容を設定：
+`.env.sample`をコピーして`.env`を作成し、必要な環境変数を設定：
 ```env
 GEMINI_API_KEY=your_api_key_here
 ```
@@ -60,8 +60,8 @@ python main.py
 ```
 
 3. ブラウザでアクセス：
-   - ローカル: `http://localhost:5000`
-   - Tailscale経由: `http://[Tailscaleアドレス]:5000`
+   - ローカル: `http://localhost:8000`
+   - Tailscale経由: `http://[Tailscaleアドレス]:8000`
 
 ## 実装済み機能
 
@@ -76,12 +76,16 @@ python main.py
   - WAVヘッダーの検証
   - Base64エンコード/デコード
   - エラーハンドリング
+  - 音声パラメータの最適化
+  - 音声の前後に無音時間を追加
 
 - ✅ 音声再生機能
   - 自動再生トグル
   - ピコ音によるユーザーインタラクション
   - 個別再生ボタン
   - 音声キュー管理
+  - 安定した音声再生
+  - リソースの適切な解放
 
 - ✅ UI/UX
   - レスポンシブデザイン
@@ -90,6 +94,14 @@ python main.py
   - スクロール自動調整
   - モバイルファースト対応
   - エンターキー送信
+
+## 最近の更新
+
+- 🔊 音声再生の安定性を大幅に向上
+- ⚡ 音声合成パラメータの最適化
+- 🛠️ エラーハンドリングの改善
+- 📝 環境変数の設定を簡素化（.env.sampleの追加）
+- 🔧 ポート番号を8000に変更
 
 ## 今後の予定
 
@@ -133,4 +145,5 @@ MITライセンス
 
 - APIキーは必ず`.env`ファイルで管理し、Gitにコミットしないでください
 - 音声合成には多くのメモリを使用する可能性があります
-- ブラウザの自動再生ポリシーにより、初回の音声再生には必ずユーザーインタラクションが必要です 
+- ブラウザの自動再生ポリシーにより、初回の音声再生には必ずユーザーインタラクションが必要です
+- 音声再生の安定性は、ブラウザやデバイスの性能に依存する場合があります 
