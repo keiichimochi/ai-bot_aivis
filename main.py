@@ -119,8 +119,12 @@ SPEAKER_PROMPTS = {
 }
 
 # Gemini APIの設定
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-2.0-flash-lite-preview-02-05')
+api_key = os.getenv('GEMINI_API_KEY')
+if not api_key:
+    raise ValueError("GEMINI_API_KEY environment variable is not set!")
+
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-2.0-flash-lite-preview-02-05')  # 元のモデルに戻す
 
 def remove_emojis(text: str) -> str:
     # 絵文字を削除
@@ -302,14 +306,14 @@ if __name__ == '__main__':
     # ホスト名を取得
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
-    print(f"サーバーを起動します: http://{local_ip}:5000")
+    print(f"サーバーを起動します: http://{local_ip}:8000")
     print(f"Tailscapeアドレス経由でもアクセス可能ナリ！")
     
     # uvicornで直接起動
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=5000,
+        port=8000,  # ポート番号を変更
         reload=True,  # ホットリロード有効
         reload_dirs=["templates"],  # テンプレートディレクトリも監視
     ) 
