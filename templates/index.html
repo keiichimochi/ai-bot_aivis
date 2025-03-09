@@ -42,6 +42,9 @@
             border-radius: 10px;
             margin-bottom: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
         }
         .toggle-switch {
             position: relative;
@@ -80,16 +83,210 @@
             cursor: pointer;
             font-size: 16px;
         }
+        
+        /* カメラボタンのスタイル */
+        .camera-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .camera-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        
+        .camera-button:active {
+            transform: scale(0.95);
+        }
+        
+        .camera-button::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            white-space: nowrap;
+            color: #333;
+        }
+        
+        .gallery-button {
+            background-color: #2196f3;
+        }
+        
+        .gallery-button:hover {
+            background-color: #1976d2;
+        }
+        
+        /* ボタングループのスタイル */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-left: 15px;
+        }
+        
+        /* 画像プレビュー領域のスタイル */
+        .image-preview-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .cancel-button {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #ff5252;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* 再生ボタンのスタイル */
+        .play-button {
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-top: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .play-button:hover {
+            background-color: #0b7dda;
+            transform: scale(1.1);
+        }
+        
+        .play-button.playing {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* 音声再生通知のスタイル */
+        .audio-activation-banner {
+            background-color: #2196f3;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            animation: fadeIn 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .audio-activation-banner:hover {
+            background-color: #0b7dda;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* ローディングアニメーション */
+        .loading-dots {
+            display: inline-block;
+            position: relative;
+            width: 40px;
+            height: 10px;
+            margin-left: 5px;
+        }
+        
+        .loading-dots span {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #2196f3;
+            border-radius: 50%;
+            animation: loading-dots 1.2s infinite ease-in-out;
+        }
+        
+        .loading-dots span:nth-child(1) {
+            left: 0;
+            animation-delay: 0s;
+        }
+        
+        .loading-dots span:nth-child(2) {
+            left: 15px;
+            animation-delay: 0.2s;
+        }
+        
+        .loading-dots span:nth-child(3) {
+            left: 30px;
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes loading-dots {
+            0%, 80%, 100% { 
+                transform: scale(0);
+            }
+            40% { 
+                transform: scale(1.0);
+            }
+        }
     </style>
 </head>
 <body>
     <h1>AI Chat Bot</h1>
+    
+    <!-- 音声再生のためのバナー -->
+    <div id="audio-activation-banner" class="audio-activation-banner" style="display: none;">
+        <span style="margin-right: 10px;">🔊</span>
+        <span>画面をクリックして音声機能を有効化</span>
+    </div>
+    
     <div class="voice-settings">
         <label for="voice-select">音声モデル:</label>
         <select id="voice-select">
             <optgroup label="korosuke">
                 <option value="488039072" selected>ノーマル</option>
             </optgroup>
+            <!-- Anneliは一時的に非表示
             <optgroup label="Anneli">
                 <option value="888753760">ノーマル</option>
                 <option value="888753761">通常</option>
@@ -98,6 +295,7 @@
                 <option value="888753764">上機嫌</option>
                 <option value="888753765">怒り・悲しみ</option>
             </optgroup>
+            -->
             <optgroup label="sakuragi">
                 <option value="269244800">ノーマル</option>
             </optgroup>
@@ -105,12 +303,42 @@
                 <option value="1342155808">ノーマル</option>
             </optgroup>
         </select>
-        <label class="toggle-switch">
-            <input type="checkbox" id="auto-play-toggle">
-            <span class="toggle-slider"></span>
-        </label>
-        <span class="toggle-label">音声自動再生</span>
+        
+        <!-- カメラボタンを追加 -->
+        <div class="button-group">
+            <button id="camera-button" class="camera-button" title="カメラで撮影" data-label="カメラ">📸</button>
+            <button id="gallery-button" class="camera-button gallery-button" title="ライブラリから選択" data-label="ライブラリ">🖼️</button>
+        </div>
+        <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
+        <input type="file" id="gallery-input" accept="image/*" style="display: none;">
+        
+        <!-- デバッグ情報表示ボタン -->
+        <button id="toggle-debug" style="font-size: 12px; padding: 5px 10px; margin-left: 10px; background-color: #6c757d;">デバッグ表示</button>
     </div>
+    
+    <!-- iOSデバッグ情報 -->
+    <div id="ios-debug-info" style="display: none; background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ddd;">
+        <h3 style="margin-top: 0;">デバッグ情報</h3>
+        <div id="audio-status">音声再生権限: 未取得</div>
+        <div id="audio-context-status">AudioContext: 未初期化</div>
+        <div id="user-interaction-status">ユーザーインタラクション: なし</div>
+        <div id="browser-info">ブラウザ情報: <script>document.write(navigator.userAgent)</script></div>
+        <div id="audio-queue-info">キュー: 0個 / 現在のデータ: 0バイト</div>
+        <div id="binary-data-info">バイナリデータ: 0バイト</div>
+        <div id="blob-url-info">Blob URL: なし</div>
+        <div id="audio-player-state">状態: 未初期化</div>
+        <div id="play-status">再生状態: 未再生</div>
+        <button id="force-audio-init" style="margin-top: 10px; background-color: #dc3545; color: white;">音声を強制初期化</button>
+    </div>
+    
+    <!-- 画像プレビュー領域 -->
+    <div id="image-preview-container" style="display: none; margin-bottom: 20px;">
+        <div class="image-preview-wrapper">
+            <img id="image-preview" style="max-width: 100%; max-height: 200px; border-radius: 10px;">
+            <button id="cancel-image" class="cancel-button">×</button>
+        </div>
+    </div>
+
     <div class="chat-container" id="chat-container"></div>
     <div class="input-container">
         <input type="text" id="user-input" placeholder="メッセージを入力..." autocomplete="off">
@@ -123,143 +351,625 @@
         const chatContainer = document.getElementById("chat-container");
         const userInput = document.getElementById("user-input");
         const voiceSelect = document.getElementById("voice-select");
-        const autoPlayToggle = document.getElementById("auto-play-toggle");
         const audioPlayer = document.getElementById("audioPlayer");
+        const cameraButton = document.getElementById("camera-button");
+        const galleryButton = document.getElementById("gallery-button");
+        const cameraInput = document.getElementById("camera-input");
+        const galleryInput = document.getElementById("gallery-input");
+        const imagePreviewContainer = document.getElementById("image-preview-container");
+        const imagePreview = document.getElementById("image-preview");
+        const cancelImage = document.getElementById("cancel-image");
+        const audioActivationBanner = document.getElementById("audio-activation-banner");
+        const forceAudioInitButton = document.getElementById("force-audio-init");
+        const userInteractionStatus = document.getElementById("user-interaction-status");
+        const toggleDebugButton = document.getElementById("toggle-debug");
+        
         let audioQueue = [];
         let isPlaying = false;
-        let hasUserEnabledAudio = false;
+        let hasUserEnabledAudio = true; // 常に有効に設定
+        let currentImageFile = null;
+        let hasUserInteracted = false;
+        let audioContext = null; // Web Audio API用のコンテキスト
 
-        // ピコ音を生成し、音声再生許可を取得する関数
-        async function createPicoSound() {
+        // 強制初期化ボタンのイベントリスナー
+        forceAudioInitButton.addEventListener("click", function() {
+            console.log("音声を強制初期化します");
+            hasUserInteracted = true;
+            updateUserInteractionStatus();
+            
+            // AudioContextを初期化
+            const success = initAudioContext();
+            
+            // テスト音声を再生
             try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.frequency.value = 1000;
-                gainNode.gain.value = 0.1;
-
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
-                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.start();
-                await new Promise(resolve => setTimeout(resolve, 50));
-                oscillator.stop();
-
-                await enableAudioPlayback();
-                hasUserEnabledAudio = true;
-                console.log("ユーザーが音声再生を許可しました！");
-            } catch (error) {
-                console.error("ピコ音の再生に失敗:", error);
-            }
-        }
-
-        async function enableAudioPlayback() {
-            audioPlayer.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
-            try {
-                await audioPlayer.play();
-                console.log("無音再生成功");
+                audioPlayer.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log("テスト音声再生成功");
+                        document.getElementById("audio-status").textContent = "音声再生権限: 取得済み (強制初期化)";
+                    }).catch(e => {
+                        console.error("テスト音声再生失敗:", e);
+                        document.getElementById("audio-status").textContent = "音声再生権限: 失敗 (強制初期化) - " + e.message;
+                    });
+                }
             } catch (e) {
-                console.error("無音再生失敗:", e);
-            }
-        }
-
-        autoPlayToggle.addEventListener("change", async function () {
-            if (this.checked && !hasUserEnabledAudio) {
-                await createPicoSound();
+                console.error("テスト音声再生エラー:", e);
             }
         });
 
+        // ユーザーインタラクションステータスの更新
+        function updateUserInteractionStatus() {
+            if (userInteractionStatus) {
+                userInteractionStatus.textContent = "ユーザーインタラクション: " + (hasUserInteracted ? "あり" : "なし");
+            }
+        }
+
+        // ページ読み込み完了時に音声有効化バナーを表示
+        window.addEventListener("load", function() {
+            // 少し遅延させてバナーを表示
+            setTimeout(() => {
+                audioActivationBanner.style.display = "flex";
+                
+                // iOS Safariでの音声再生問題を検出
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS) {
+                    console.log("iOS端末を検出しました。特別な処理を適用します。");
+                    // デバッグ情報は表示しない
+                    // document.getElementById("ios-debug-info").style.display = "block";
+                }
+                
+                updateUserInteractionStatus();
+            }, 1000);
+        });
+
+        // バナーのクリックイベント
+        audioActivationBanner.addEventListener("click", function() {
+            hasUserInteracted = true;
+            updateUserInteractionStatus();
+            this.style.display = "none";
+            
+            // iOS向けの特別な処理
+            initAudioContext();
+            
+            // テスト用の短い音声を再生して権限を確保
+            try {
+                const testAudio = new Audio();
+                testAudio.volume = 0.01; // ほぼ無音
+                testAudio.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="; // 無音に近い短いWAVデータ
+                
+                // iOS Safariでは、ユーザーインタラクション内で再生を開始する必要がある
+                const playPromise = testAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log("音声再生権限を取得しました");
+                        document.getElementById("audio-status").textContent = "音声再生権限: 取得済み";
+                    }).catch(e => {
+                        console.error("音声再生権限の取得に失敗しました:", e);
+                        document.getElementById("audio-status").textContent = "音声再生権限: 失敗 - " + e.message;
+                    });
+                }
+            } catch (e) {
+                console.error("音声テスト再生エラー:", e);
+                document.getElementById("audio-status").textContent = "音声再生エラー: " + e.message;
+            }
+        });
+        
+        // Web Audio APIコンテキストの初期化
+        function initAudioContext() {
+            try {
+                // AudioContextが既に存在する場合は再利用
+                if (!audioContext) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContext();
+                    console.log("AudioContextを作成しました:", audioContext.state);
+                }
+                
+                // 状態が suspended の場合は resume を呼び出す
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => {
+                        console.log("AudioContext resumed successfully");
+                        document.getElementById("audio-context-status").textContent = "AudioContext: " + audioContext.state;
+                    });
+                }
+                
+                document.getElementById("audio-context-status").textContent = "AudioContext: " + audioContext.state;
+                
+                // iOS Safariでの問題対策として無音を再生
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 0.01; // ほぼ無音
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.start(0);
+                oscillator.stop(0.1); // 0.1秒後に停止
+                
+                return true;
+            } catch (e) {
+                console.error("AudioContext初期化エラー:", e);
+                document.getElementById("audio-context-status").textContent = "AudioContext初期化エラー: " + e.message;
+                return false;
+            }
+        }
+
+        // ユーザーインタラクションを検知
+        document.addEventListener("click", function() {
+            if (!hasUserInteracted) {
+                hasUserInteracted = true;
+                updateUserInteractionStatus();
+                console.log("ユーザーインタラクションを検知しました");
+                // バナーを非表示
+                audioActivationBanner.style.display = "none";
+                
+                // iOS向けの特別な処理
+                initAudioContext();
+            }
+        });
+        
+        // キー入力でもユーザーインタラクションを検知
+        document.addEventListener("keydown", function() {
+            if (!hasUserInteracted) {
+                hasUserInteracted = true;
+                updateUserInteractionStatus();
+                console.log("ユーザーインタラクションを検知しました");
+                // バナーを非表示
+                audioActivationBanner.style.display = "none";
+                
+                // iOS向けの特別な処理
+                initAudioContext();
+            }
+        });
+
+        // カメラボタンのクリックイベント
+        cameraButton.addEventListener("click", function() {
+            cameraInput.click();
+        });
+
+        // ギャラリーボタンのクリックイベント
+        galleryButton.addEventListener("click", function() {
+            galleryInput.click();
+        });
+
+        // 画像アップロードの処理（カメラ）
+        cameraInput.addEventListener("change", handleImageUpload);
+        
+        // 画像アップロードの処理（ギャラリー）
+        galleryInput.addEventListener("change", handleImageUpload);
+        
+        // 画像アップロード処理の共通関数
+        function handleImageUpload(event) {
+            if (event.target.files && event.target.files[0]) {
+                const file = event.target.files[0];
+                currentImageFile = file;
+                
+                // 画像アップロード中のメッセージを表示
+                addMessage("画像をアップロード中...", true);
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.style.display = "block";
+                    
+                    // 画像がアップロードされたら自動で送信
+                    sendMessage();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // キャンセルボタンのクリックイベント
+        cancelImage.addEventListener("click", function() {
+            imagePreviewContainer.style.display = "none";
+            imagePreview.src = "";
+            currentImageFile = null;
+            cameraInput.value = "";
+            galleryInput.value = "";
+        });
+
+        // サーバーからのレスポンスを処理
+        async function handleResponse(response) {
+            try {
+                const data = await response.json();
+                
+                if (data.error) {
+                    addMessage(`エラー: ${data.error}`, false);
+                    return;
+                }
+                
+                // AIの応答メッセージを表示
+                const aiMessage = data.message || data.response;
+                
+                // 音声データがある場合は処理
+                let audioSegments = [];
+                if (data.audio) {
+                    // 単一の音声データの場合
+                    audioSegments.push(data.audio);
+                    console.log("単一の音声データを受信しました");
+                } else if (data.audio_segments && data.audio_segments.length > 0) {
+                    // 複数の音声セグメントの場合
+                    audioSegments = data.audio_segments;
+                    console.log(`${audioSegments.length}個の音声セグメントを受信しました`);
+                }
+                
+                // メッセージと音声を表示
+                addMessage(aiMessage, false, audioSegments.length > 0 ? audioSegments : null);
+                
+                console.log("サーバーからの応答を処理しました");
+                console.log("音声セグメント数:", audioSegments.length);
+            } catch (error) {
+                console.error("レスポンス処理エラー:", error);
+                addMessage("エラーが発生しました。もう一度お試しください。", false);
+            }
+        }
+
+        // メッセージを追加する関数
         function addMessage(message, isUser, audioSegments = null) {
             const messageDiv = document.createElement("div");
             messageDiv.className = `message ${isUser ? "user-message" : "ai-message"}`;
-            messageDiv.textContent = message;
+            
+            // ローディングアニメーションを追加（画像アップロード中やAI応答待ち用）
+            if (message === "画像をアップロード中..." || message === "画像を分析しています...") {
+                const baseText = message.replace("...", "");
+                messageDiv.textContent = baseText;
+                
+                const loadingDots = document.createElement("div");
+                loadingDots.className = "loading-dots";
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement("span");
+                    loadingDots.appendChild(dot);
+                }
+                
+                messageDiv.appendChild(loadingDots);
+            } else {
+                messageDiv.textContent = message;
+            }
+            
+            // AIメッセージで音声がある場合は再生ボタンを追加
+            if (!isUser && audioSegments && audioSegments.length > 0) {
+                const playButton = document.createElement("button");
+                playButton.className = "play-button";
+                playButton.innerHTML = "🔊";
+                playButton.title = "音声を再生";
+                
+                // 音声再生ボタンのクリックイベント
+                playButton.onclick = function(event) {
+                    // イベントの伝播を停止
+                    event.stopPropagation();
+                    
+                    console.log("音声再生ボタンがクリックされました");
+                    
+                    // 音声を再生
+                    // 現在の再生をクリア
+                    audioQueue = [];
+                    isPlaying = false;
+                    
+                    // 新しい音声をキューに追加
+                    audioQueue.push(...audioSegments);
+                    processAudioQueue();
+                    
+                    // ボタンの見た目を変更
+                    playButton.innerHTML = "🔊";
+                    playButton.classList.add("playing");
+                    
+                    // 再生が終わったらボタンを元に戻す
+                    setTimeout(() => {
+                        playButton.classList.remove("playing");
+                    }, audioSegments.length * 2000); // 適当な時間を設定
+                };
+                
+                messageDiv.appendChild(document.createElement("br"));
+                messageDiv.appendChild(playButton);
+            }
+            
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
+            // AIメッセージで音声がある場合は自動再生を試みる
             if (!isUser && audioSegments && audioSegments.length > 0) {
-                audioQueue.push(...audioSegments);
-                processAudioQueue();
+                // ユーザーインタラクションがあった場合のみ自動再生
+                if (hasUserInteracted) {
+                    console.log("ユーザーインタラクションあり、自動再生を試みます");
+                    
+                    // iOS向けの特別な処理
+                    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+                        console.log("iOS端末での再生を試みます");
+                        // AudioContextが初期化されていない場合は初期化
+                        if (!audioContext || audioContext.state !== 'running') {
+                            initAudioContext();
+                        }
+                    }
+                    
+                    audioQueue.push(...audioSegments);
+                    processAudioQueue();
+                } else {
+                    console.log("ユーザーインタラクションがないため、自動再生できません。音声を再生するには再生ボタンをクリックしてください。");
+                    // 自動再生できない場合は通知を表示
+                    const autoplayNotice = document.createElement("div");
+                    autoplayNotice.className = "autoplay-notice";
+                    autoplayNotice.textContent = "🔊 音声を聞くには画面をクリックしてください";
+                    autoplayNotice.style.color = "#2196f3";
+                    autoplayNotice.style.fontSize = "0.9em";
+                    autoplayNotice.style.marginTop = "5px";
+                    autoplayNotice.style.cursor = "pointer";
+                    autoplayNotice.onclick = function() {
+                        hasUserInteracted = true;
+                        updateUserInteractionStatus();
+                        
+                        // iOS向けの特別な処理
+                        if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+                            initAudioContext();
+                        }
+                        
+                        audioQueue.push(...audioSegments);
+                        processAudioQueue();
+                        this.style.display = "none";
+                    };
+                    messageDiv.appendChild(autoplayNotice);
+                }
             }
         }
 
-        async function processAudioQueue() {
-            if (isPlaying || audioQueue.length === 0) return;
+        // 音声キューの処理
+        function processAudioQueue() {
+            console.log("processAudioQueue called, isPlaying:", isPlaying, "queue length:", audioQueue.length);
+            
+            if (isPlaying || audioQueue.length === 0) {
+                console.log("既に再生中か、キューが空なので処理をスキップします");
+                return;
+            }
+            
             isPlaying = true;
-
-            while (audioQueue.length > 0) {
-                const audioData = audioQueue.shift();
-                await playAudio(audioData);
-            }
-
-            isPlaying = false;
-        }
-
-        async function playAudio(audioData) {
-            return new Promise((resolve, reject) => {
-                const byteArray = new Uint8Array(atob(audioData).split("").map(c => c.charCodeAt(0)));
+            const audioData = audioQueue.shift();
+            console.log("次の音声を再生します。データ長:", audioData ? audioData.length : 0);
+            
+            // iOSデバッグ情報を更新
+            document.getElementById("audio-queue-info").textContent = `キュー: ${audioQueue.length}個 / 現在のデータ: ${audioData ? audioData.length : 0}バイト`;
+            
+            try {
+                // Base64データをバイナリに変換
+                const byteCharacters = atob(audioData);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                console.log("バイナリデータに変換しました。サイズ:", byteArray.length, "バイト");
+                document.getElementById("binary-data-info").textContent = `バイナリデータ: ${byteArray.length}バイト`;
+                
+                // Blobを作成
                 const blob = new Blob([byteArray], { type: "audio/wav" });
                 const audioUrl = URL.createObjectURL(blob);
+                console.log("Blob URLを作成しました:", audioUrl);
+                document.getElementById("blob-url-info").textContent = `Blob URL: ${audioUrl}`;
                 
-                // 前の音声のURLを解放する前に新しいURLを設定
+                // 古いURLを保存
                 const oldUrl = audioPlayer.src;
-                audioPlayer.src = audioUrl;
                 
-                // 音声の読み込みが完了したら再生開始
-                audioPlayer.onloadeddata = () => {
-                    audioPlayer.play().catch(e => {
-                        console.error("音声再生エラー:", e);
-                        reject(e);
-                    });
-                };
-
-                // 音声再生完了時の処理
-                audioPlayer.onended = () => {
-                    console.log("音声再生完了");
-                    // 少し待ってからリソース解放
-                    setTimeout(() => {
+                // 新しいURLを設定
+                audioPlayer.src = audioUrl;
+                console.log("audioPlayer.src を設定しました:", audioPlayer.src);
+                
+                // iOS Safariでの再生問題をデバッグするためのログ
+                console.log("audioPlayer の状態:", {
+                    readyState: audioPlayer.readyState,
+                    paused: audioPlayer.paused,
+                    ended: audioPlayer.ended,
+                    error: audioPlayer.error,
+                    networkState: audioPlayer.networkState
+                });
+                document.getElementById("audio-player-state").textContent = 
+                    `状態: readyState=${audioPlayer.readyState}, paused=${audioPlayer.paused}, networkState=${audioPlayer.networkState}`;
+                
+                // 再生を試みる
+                const playPromise = audioPlayer.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log("音声再生が開始されました");
+                        document.getElementById("play-status").textContent = "再生状態: 再生中";
+                    }).catch(error => {
+                        console.error("音声再生エラー:", error);
+                        document.getElementById("play-status").textContent = `再生状態: エラー - ${error.name}: ${error.message}`;
+                        isPlaying = false;
+                        
+                        // エラーの詳細情報を出力
+                        console.error("エラーの詳細:", {
+                            name: error.name,
+                            message: error.message,
+                            code: error.code,
+                            stack: error.stack
+                        });
+                        
+                        // 自動再生が拒否された場合の処理
+                        if (error.name === "NotAllowedError") {
+                            console.log("自動再生が拒否されました。ユーザーインタラクションが必要です。");
+                            hasUserInteracted = false;
+                            updateUserInteractionStatus();
+                            
+                            // バナーを再表示
+                            audioActivationBanner.style.display = "flex";
+                        }
+                        
+                        // 古いURLを解放
                         if (oldUrl && oldUrl.startsWith('blob:')) {
                             URL.revokeObjectURL(oldUrl);
                         }
-                        URL.revokeObjectURL(audioUrl);
-                        resolve();
-                    }, 100); // 100ms待機
-                };
-
-                audioPlayer.onerror = (e) => {
-                    console.error("音声エラー:", e);
-                    if (oldUrl && oldUrl.startsWith('blob:')) {
-                        URL.revokeObjectURL(oldUrl);
-                    }
-                    URL.revokeObjectURL(audioUrl);
-                    reject(e);
-                };
-            });
+                        
+                        // 次の音声を処理
+                        processAudioQueue();
+                    });
+                } else {
+                    console.log("playPromise は undefined です（古いブラウザの可能性）");
+                    document.getElementById("play-status").textContent = "再生状態: playPromise undefined";
+                    
+                    // 古いブラウザ向けの処理
+                    audioPlayer.onended = function() {
+                        console.log("古いブラウザでの再生終了");
+                        document.getElementById("play-status").textContent = "再生状態: 終了 (古いブラウザ)";
+                        isPlaying = false;
+                        
+                        // 古いURLを解放
+                        if (oldUrl && oldUrl.startsWith('blob:')) {
+                            URL.revokeObjectURL(oldUrl);
+                        }
+                        
+                        processAudioQueue();
+                    };
+                }
+            } catch (e) {
+                console.error("音声再生の試行中に例外が発生しました:", e);
+                document.getElementById("play-status").textContent = `再生状態: 例外 - ${e.name}: ${e.message}`;
+                console.error("例外の詳細:", {
+                    name: e.name,
+                    message: e.message,
+                    stack: e.stack
+                });
+                isPlaying = false;
+                processAudioQueue();
+            }
         }
+        
+        // 音声再生終了イベント
+        audioPlayer.addEventListener("ended", function() {
+            console.log("音声再生が終了しました");
+            document.getElementById("play-status").textContent = "再生状態: 終了";
+            
+            // 古いURLを解放
+            if (audioPlayer.src && audioPlayer.src.startsWith('blob:')) {
+                const oldUrl = audioPlayer.src;
+                setTimeout(() => {
+                    URL.revokeObjectURL(oldUrl);
+                    console.log("Blob URLを解放しました:", oldUrl);
+                }, 100);
+            }
+            
+            isPlaying = false;
+            processAudioQueue();
+        });
+        
+        // 音声再生エラーイベント
+        audioPlayer.addEventListener("error", function(e) {
+            console.error("音声再生中にエラーが発生しました:", e);
+            console.error("audioPlayer.error:", audioPlayer.error);
+            document.getElementById("play-status").textContent = `再生状態: エラー - ${audioPlayer.error ? audioPlayer.error.code : 'unknown'}`;
+            
+            // 古いURLを解放
+            if (audioPlayer.src && audioPlayer.src.startsWith('blob:')) {
+                URL.revokeObjectURL(audioPlayer.src);
+            }
+            
+            isPlaying = false;
+            processAudioQueue();
+        });
+        
+        // 音声再生開始イベント
+        audioPlayer.addEventListener("playing", function() {
+            console.log("音声再生が開始されました (playing イベント)");
+            document.getElementById("play-status").textContent = "再生状態: 再生中 (playing)";
+        });
+        
+        // 音声一時停止イベント
+        audioPlayer.addEventListener("pause", function() {
+            console.log("音声が一時停止されました");
+            document.getElementById("play-status").textContent = "再生状態: 一時停止";
+        });
+        
+        // 音声読み込み完了イベント
+        audioPlayer.addEventListener("canplaythrough", function() {
+            console.log("音声の読み込みが完了しました (canplaythrough)");
+            document.getElementById("audio-player-state").textContent = 
+                `状態: readyState=${audioPlayer.readyState}, paused=${audioPlayer.paused}, networkState=${audioPlayer.networkState} (canplaythrough)`;
+        });
 
         async function sendMessage() {
             const message = userInput.value.trim();
-            if (!message) return;
-
-            addMessage(message, true);
+            if (!message && !currentImageFile) return;
+            
+            // 画像のみの場合は「画像を分析しています...」というメッセージを表示
+            const displayMessage = currentImageFile ? (message || "画像を分析しています...") : message;
+            
+            // 画像アップロード中のメッセージが既に表示されている場合は新しいメッセージを表示しない
+            const lastMessage = chatContainer.lastElementChild;
+            const isUploadingMessage = lastMessage && lastMessage.textContent.includes("画像をアップロード中");
+            
+            if (!isUploadingMessage) {
+                addMessage(displayMessage, true);
+            } else if (lastMessage) {
+                // アップロード中メッセージを更新
+                lastMessage.innerHTML = '';
+                addMessage(displayMessage, true);
+            }
+            
             userInput.value = "";
-
+            
             try {
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message, voice_id: parseInt(voiceSelect.value) })
-                });
-
-                const data = await response.json();
-                addMessage(data.message, false, data.audio_segments);
+                let response;
+                
+                if (currentImageFile) {
+                    // 画像がある場合はFormDataを使用
+                    const formData = new FormData();
+                    formData.append("message", message || "");
+                    formData.append("voice_id", voiceSelect.value);
+                    formData.append("image", currentImageFile);
+                    
+                    console.log("画像付きメッセージを送信します");
+                    
+                    // AI応答待ち中のメッセージを表示
+                    addMessage("画像を分析中...", false);
+                    
+                    response = await fetch("/chat_with_image", {
+                        method: "POST",
+                        body: formData
+                    });
+                    
+                    // 応答待ちメッセージを削除
+                    const waitingMessage = chatContainer.lastElementChild;
+                    if (waitingMessage && waitingMessage.textContent.includes("画像を分析中")) {
+                        chatContainer.removeChild(waitingMessage);
+                    }
+                    
+                    // 画像送信後はプレビューをクリア
+                    imagePreviewContainer.style.display = "none";
+                    imagePreview.src = "";
+                    currentImageFile = null;
+                    cameraInput.value = "";
+                    galleryInput.value = "";
+                } else {
+                    // 通常のテキストメッセージ
+                    console.log("テキストメッセージを送信します");
+                    
+                    // AI応答待ち中のメッセージを表示
+                    addMessage("応答を生成中...", false);
+                    
+                    response = await fetch("/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message, voice_id: parseInt(voiceSelect.value) })
+                    });
+                    
+                    // 応答待ちメッセージを削除
+                    const waitingMessage = chatContainer.lastElementChild;
+                    if (waitingMessage && waitingMessage.textContent.includes("応答を生成中")) {
+                        chatContainer.removeChild(waitingMessage);
+                    }
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // レスポンスを処理
+                await handleResponse(response);
             } catch (error) {
                 console.error("エラー:", error);
-                addMessage("エラーが発生しました。", false);
+                
+                // エラー発生時に応答待ちメッセージを削除
+                const waitingMessage = chatContainer.lastElementChild;
+                if (waitingMessage && (waitingMessage.textContent.includes("応答を生成中") || waitingMessage.textContent.includes("画像を分析"))) {
+                    chatContainer.removeChild(waitingMessage);
+                }
+                
+                addMessage("エラーが発生しました。もう一度お試しください。", false);
             }
         }
 
@@ -270,6 +980,21 @@
                 sendMessage();
             }
         });
+
+        // デバッグ情報表示ボタンのイベントリスナー
+        toggleDebugButton.addEventListener("click", function() {
+            const debugInfo = document.getElementById("ios-debug-info");
+            if (debugInfo.style.display === "none") {
+                debugInfo.style.display = "block";
+                this.textContent = "デバッグ非表示";
+                this.style.backgroundColor = "#dc3545";
+            } else {
+                debugInfo.style.display = "none";
+                this.textContent = "デバッグ表示";
+                this.style.backgroundColor = "#6c757d";
+            }
+        });
     </script>
 </body>
 </html>
+
