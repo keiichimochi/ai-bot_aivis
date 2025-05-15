@@ -40,11 +40,17 @@ uv venv
 uv pip install flask python-dotenv google-generativeai requests
 ```
 
-4. 環境変数の設定：
-`.env`ファイルを作成し、以下の内容を設定：
-```env
-GEMINI_API_KEY=your_api_key_here
-```
+4. Gemini APIキーの取得と設定：
+   - [Google AI Studio](https://makersuite.google.com/app/apikey)にアクセス
+   - Googleアカウントでログイン
+   - 「Create API Key」をクリック
+   - 生成されたAPIキーをコピー
+   - プロジェクトのルートディレクトリに`.env`ファイルを作成
+   - 以下の内容を`.env`ファイルに記述：
+   ```env
+   GEMINI_API_KEY=your_api_key_here
+   ```
+   - `your_api_key_here`の部分をコピーしたAPIキーに置き換え
 
 ## 使い方
 

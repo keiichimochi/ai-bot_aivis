@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 import os
 import base64
 import re
+import psutil
+import socket
+import time
 
 # 環境変数を読み込む
 load_dotenv()
@@ -313,5 +316,28 @@ def chat():
             'error': str(e)
         }), 500
 
+def kill_process_on_port(port):
+    """指定されたポートを使用しているプロセスを終了するナリ"""
+    for proc in psutil.process_iter(['pid', 'name']):
+        try:
+            for conn in proc.net_connections():
+                if conn.laddr.port == port:
+                    print(f"ポート {port} を使用しているプロセスを終了するナリ: {proc.pid}")
+                    proc.kill()
+                    time.sleep(1)  # ポート解放待ちナリ
+                    return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return False
+
+def is_port_in_use(port):
+    """指定されたポートが使用中かどうかを確認するナリ"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+    port = 5050
+    if is_port_in_use(port):
+        print(f"ポート {port} が使用中のため、プロセスを終了するナリ...")
+        kill_process_on_port(port)
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
