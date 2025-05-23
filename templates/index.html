@@ -3,364 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chat Bot</title>
+    <title>AIチャットボット</title>
     <link rel="icon" href="data:,">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .chat-container {
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            height: 500px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-        }
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 10px;
-            max-width: 70%;
-        }
-        .user-message {
-            background-color: #e3f2fd;
-            margin-left: auto;
-        }
-        .ai-message {
-            background-color: #f5f5f5;
-        }
-        .input-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .voice-settings {
-            background-color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .voice-settings select {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            margin-right: 10px;
-            min-width: 200px;
-        }
-        .voice-settings label {
-            margin-right: 10px;
-            font-weight: bold;
-        }
-        /* トグルスイッチのスタイル */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-            vertical-align: middle;
-        }
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .toggle-slider {
-            background-color: #4CAF50;
-        }
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-        .toggle-label {
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-        input[type="text"] {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #2196f3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #1976d2;
-        }
-        .audio-control {
-            margin-top: 5px;
-        }
-        optgroup {
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <h1>AI Chat Bot</h1>
-    <div class="voice-settings">
-        <label for="voice-select">音声モデル:</label>
-        <select id="voice-select">
-            <optgroup label="korosuke">
-                <option value="488039072" selected>ノーマル</option>
-            </optgroup>
-            <optgroup label="Anneli">
-                <option value="888753760">ノーマル</option>
-                <option value="888753761">通常</option>
-                <option value="888753762">テンション高め</option>
-                <option value="888753763">落ち着き</option>
-                <option value="888753764">上機嫌</option>
-                <option value="888753765">怒り・悲しみ</option>
-            </optgroup>
-            <optgroup label="sakuragi">
-                <option value="269244800">ノーマル</option>
-            </optgroup>
-            <optgroup label="yamaoka">
-                <option value="1342155808">ノーマル</option>
-            </optgroup>
-        </select>
-        <label class="toggle-switch">
-            <input type="checkbox" id="auto-play-toggle">
-            <span class="toggle-slider"></span>
-        </label>
-        <span class="toggle-label">音声自動再生</span>
+    <h1>AIチャットボット</h1>
+
+    <div class="settings-container">
+        <div class="settings-group">
+            <label for="voice-select">音声:</label>
+            <select id="voice-select">
+                <optgroup label="コロ助 (korosuke)">
+                    <option value="488039072" selected>ノーマル</option>
+                </optgroup>
+                <optgroup label="アンネリ (Anneli)">
+                    <option value="888753760">ノーマル</option>
+                    <option value="888753761">通常</option>
+                    <option value="888753762">テンション高め</option>
+                    <option value="888753763">落ち着き</option>
+                    <option value="888753764">上機嫌</option>
+                    <option value="888753765">怒り・悲しみ</option>
+                </optgroup>
+                <optgroup label="桜木 (sakuragi)">
+                    <option value="269244800">ノーマル</option>
+                </optgroup>
+                <optgroup label="山岡 (yamaoka)">
+                    <option value="1342155808">ノーマル</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="settings-group">
+            <label for="ai-model-select">AIモデル:</label>
+            <select id="ai-model-select">
+                <option value="gemini">Gemini 2.0 Flash</option>
+                <option value="claude-sonnet">Claude 3.5 Sonnet</option>
+                <option value="openai-gpt-4o">OpenAI GPT-4o</option>
+            </select>
+        </div>
+
+        <div class="settings-group">
+            <label class="toggle-switch">
+                <input type="checkbox" id="auto-play-toggle">
+                <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">音声自動再生</span>
+        </div>
     </div>
-    <div class="chat-container" id="chat-container"></div>
+
+    <div class="chat-container" id="chat-container">
+    </div>
+
     <div class="input-container">
-        <input type="text" id="user-input" placeholder="メッセージを入力..." autocomplete="off">
-        <button onclick="sendMessage()">送信</button>
+        <input type="file" id="image-input" accept="image/*" style="display: none;">
+        <button id="camera-button" title="写真を撮る・ライブラリから選択">📷</button>
+        <input type="text" id="user-input" placeholder="メッセージを入力してください..." autocomplete="off">
+        <button id="send-button">送信</button>
     </div>
 
-    <script>
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const voiceSelect = document.getElementById('voice-select');
-        const autoPlayToggle = document.getElementById('auto-play-toggle');
-        let isPlaying = false;  // 音声再生中かどうかのフラグ
-        let hasUserEnabledAudio = false;  // ユーザーが音声を有効にしたかどうか
-
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        function addMessage(message, isUser) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-            messageDiv.textContent = message;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        async function playAudio(audioData) {
-            console.log('音声データを再生中...');
-            console.log('音声データの長さ:', audioData.length);
-
-            // Blob形式で音声データを作成
-            const byteCharacters = atob(audioData);
-            const byteNumbers = new Array(byteCharacters.length);
-            
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(blob);
-            
-            const audio = new Audio(audioUrl);
-            
-            // 音声の再生が終わるまで待機
-            await new Promise((resolve, reject) => {
-                audio.onloadeddata = () => {
-                    console.log('音声データのロード完了');
-                    console.log('音声の長さ:', audio.duration, '秒');
-                };
-                
-                audio.onended = () => {
-                    console.log('音声の再生完了');
-                    URL.revokeObjectURL(audioUrl);
-                    resolve();
-                };
-                
-                audio.onerror = (error) => {
-                    console.error('音声の読み込みエラー:', error);
-                    URL.revokeObjectURL(audioUrl);
-                    reject(error);
-                };
-
-                audio.play().catch(error => {
-                    console.error('音声の再生エラー:', error);
-                    URL.revokeObjectURL(audioUrl);
-                    reject(error);
-                });
-            });
-        }
-
-        let audioQueue = [];  // 音声キュー
-        let isProcessingQueue = false;  // キュー処理中フラグ
-
-        // キューの処理
-        async function processAudioQueue() {
-            if (isProcessingQueue) {
-                console.log('キューの処理中...');
-                return;
-            }
-            
-            try {
-                isProcessingQueue = true;
-                console.log('キューの処理を開始:', audioQueue.length, '個の音声データ');
-                
-                while (audioQueue.length > 0) {
-                    const audioData = audioQueue[0];  // キューの先頭を参照
-                    try {
-                        await playAudio(audioData);
-                        audioQueue.shift();  // 再生完了後に削除
-                    } catch (error) {
-                        console.error('音声の再生に失敗:', error);
-                        audioQueue.shift();  // エラー時も次に進む
-                    }
-                }
-            } finally {
-                isProcessingQueue = false;
-                console.log('キューの処理完了');
-            }
-        }
-
-        // ピコ音を生成する関数
-        async function createPicoSound() {
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                // 高めの周波数で短いピコ音を生成
-                oscillator.frequency.value = 1000;  // 1000Hz
-                gainNode.gain.value = 0.1;  // 音量を小さめに
-                
-                // 音量の制御（エンベロープ）
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
-                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // 0.05秒だけ再生
-                oscillator.start();
-                await new Promise(resolve => setTimeout(resolve, 50));
-                oscillator.stop();
-                
-                return true;
-            } catch (error) {
-                console.error('ピコ音の再生に失敗:', error);
-                return false;
-            }
-        }
-
-        // トグルスイッチの状態変更を監視
-        autoPlayToggle.addEventListener('change', async function() {
-            if (this.checked && !hasUserEnabledAudio) {
-                console.log('音声自動再生の有効化を試みています...');
-                
-                // ピコ音を再生して自動再生制限を解除
-                const success = await createPicoSound();
-                
-                if (success) {
-                    hasUserEnabledAudio = true;
-                    console.log('ユーザーが音声自動再生を有効化しました');
-                } else {
-                    // 失敗した場合はトグルを元に戻す
-                    this.checked = false;
-                    console.log('音声自動再生の有効化に失敗しました');
-                }
-            }
-        });
-
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (!message) return;
-
-            const selectedVoice = voiceSelect.value;
-            addMessage(message, true);
-            userInput.value = '';
-
-            try {
-                console.log('サーバーにリクエスト送信中...');
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        message: message,
-                        voice_id: parseInt(selectedVoice)
-                    })
-                });
-
-                console.log('サーバーからレスポンス受信');
-                const data = await response.json();
-                
-                if (data.error) {
-                    console.error('サーバーエラー:', data.error);
-                    addMessage('音声の生成中にエラーが発生しました。', false);
-                    return;
-                }
-                
-                console.log('AIの応答:', data.message);
-                addMessage(data.message, false);
-
-                if (data.audio) {
-                    console.log('音声データのサイズ:', data.audio.length);
-                    console.log('Content-Type:', data.content_type);
-                    // 音声データをキューに追加
-                    audioQueue.push(data.audio);
-                    // 自動再生がオンで、ユーザーが有効化している場合のみ自動再生
-                    if (autoPlayToggle.checked && hasUserEnabledAudio) {
-                        processAudioQueue();
-                    }
-                }
-
-            } catch (error) {
-                console.error('エラー:', error);
-                addMessage('エラーが発生しました。', false);
-            }
-        }
-    </script>
+    <!-- JavaScript files -->
+    <script src="{{ url_for('static', filename='js/audio.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/image.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html> 

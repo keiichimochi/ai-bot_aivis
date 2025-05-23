@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from litellm import completion # LiteLLMをインポート
+import google.generativeai as genai  # Google GenerativeAI SDKを直接インポート
 import requests
 import json
 from dotenv import load_dotenv
@@ -9,9 +10,18 @@ import re
 import psutil
 import socket
 import time
+import traceback
 
 # 環境変数を読み込む
 load_dotenv()
+
+# Google GenerativeAI SDKを初期化
+gemini_api_key = os.getenv('GEMINI_API_KEY')
+if gemini_api_key:
+    genai.configure(api_key=gemini_api_key)
+    print("Google GenerativeAI SDK初期化完了")
+else:
+    print("警告: GEMINI_API_KEYが設定されていません")
 
 app = Flask(__name__)
 
@@ -257,6 +267,49 @@ def generate_speech(text, speaker_id):
 
     return bytes(result)
 
+def process_image_with_gemini(user_message, image_data, voice_id):
+    """Google GenerativeAI SDKを直接使って画像処理"""
+    try:
+        print("Google GenerativeAI SDKで画像処理を開始...")
+        
+        # システムプロンプトを取得
+        system_prompt = SPEAKER_PROMPTS.get(voice_id, "あなたは親切なアシスタントです。")
+        
+        # モデルを初期化
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        # Base64画像データを処理
+        if image_data.startswith('data:image/'):
+            # data:image/jpeg;base64, の部分を除去
+            image_base64 = image_data.split(',')[1]
+            mime_type = image_data.split(';')[0].split(':')[1]
+        else:
+            image_base64 = image_data
+            mime_type = 'image/jpeg'
+        
+        # 画像バイナリデータを作成
+        image_bytes = base64.b64decode(image_base64)
+        
+        # メッセージを構築
+        prompt = f"{system_prompt}\n\n{user_message if user_message else 'この画像について、何が写っているか、どんな特徴があるか、興味深い点は何かを詳しく説明してください。'}"
+        
+        # 画像と一緒にリクエスト
+        response = model.generate_content([
+            prompt,
+            {
+                'mime_type': mime_type,
+                'data': image_bytes
+            }
+        ])
+        
+        print(f"Google GenerativeAI SDK応答: {response.text}")
+        return response.text.strip()
+        
+    except Exception as e:
+        print(f"Google GenerativeAI SDKエラー: {str(e)}")
+        print(f"エラー詳細: {traceback.format_exc()}")
+        raise e
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -267,51 +320,31 @@ def chat():
     user_message = data.get('message', '')
     voice_id = data.get('voice_id', 488039072)  # デフォルトはkorosuke
     selected_ai_model = data.get('ai_model', 'gemini') # フロントエンドからAIモデル名を受け取る
+    image_data = data.get('image', None)  # 画像データ（base64）
 
     print(f"受信したメッセージ: {user_message}")
     print(f"選択された音声ID: {voice_id}")
     print(f"選択されたAIモデル: {selected_ai_model}")
+    if image_data:
+        print(f"画像データを受信しました (サイズ: {len(image_data)} bytes)")
+        # 画像データの先頭部分をログ出力（デバッグ用）
+        print(f"画像データの先頭: {image_data[:100]}...")
 
     try:
-        # システムプロンプトを取得
-        system_prompt = SPEAKER_PROMPTS.get(voice_id, "あなたは親切なアシスタントです。")
-        print(f"使用するシステムプロンプト: {system_prompt}")
-
-        print(f"{selected_ai_model}で応答を生成中...")
-
-        model_name = ""
-        # LiteLLMのモデル名指定 (2025年5月時点での推奨/一般的なモデル名)
-        if selected_ai_model == "gemini":
-            model_name = "gemini/gemini-1.5-flash-latest"
-        elif selected_ai_model == "claude-sonnet": # "claude-sonnet-3.7" の代わりに一般的なSonnetを指定
-            model_name = "claude-3-5-sonnet-20240620" # Claude 3.5 Sonnet (最新のSonnetを確認してください)
-        elif selected_ai_model == "openai-gpt-4o":
-            model_name = "gpt-4o"
+        # 画像がある場合の特別処理
+        if image_data:
+            print("画像処理モード: Google GenerativeAI SDKを使用")
+            try:
+                # Google GenerativeAI SDKで直接処理
+                ai_message = process_image_with_gemini(user_message, image_data, voice_id)
+            except Exception as image_error:
+                print(f"画像処理エラー: {str(image_error)}")
+                print(f"画像処理詳細エラー: {traceback.format_exc()}")
+                raise image_error
         else:
-            raise ValueError("無効なAIモデルが選択されました。")
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ]
-
-        # LiteLLM呼び出し
-        # APIキーはLiteLLMが環境変数から自動で読み込みます
-        # (e.g., OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY)
-        response = completion(
-            model=model_name,
-            messages=messages,
-            # 必要に応じて他のパラメータ (temperature, max_tokensなど) を追加
-            # temperature=0.7,
-            # max_tokens=500,
-        )
-
-        # LiteLLMのレスポンス構造に合わせてメッセージを取得
-        ai_message = ""
-        if response.choices and response.choices[0].message and response.choices[0].message.content:
-            ai_message = response.choices[0].message.content.strip()
-        else:
-            raise ValueError("AIからの応答が予期した形式ではありません。")
+            # テキストのみの場合
+            print("テキスト処理モード")
+            ai_message = process_with_litellm(user_message, None, voice_id, selected_ai_model)
 
         print(f"{selected_ai_model}の応答: {ai_message}")
 
@@ -342,18 +375,65 @@ def chat():
     except Exception as e:
         error_message = f"エラーが発生しました: {str(e)}"
         print(error_message)
-        # LiteLLMは詳細なエラー情報を含むことがあるので、ログで確認すると良いでしょう。
-        # 例: print(f"LiteLLM raw response: {response}")
+        print(f"エラー詳細: {traceback.format_exc()}")
         return jsonify({
             'message': error_message, # ユーザーに表示するメッセージ
             'error': str(e)    # 詳細なエラー (デバッグ用)
         }), 500
 
+def process_with_litellm(user_message, image_data, voice_id, selected_ai_model):
+    """LiteLLMを使った処理（テキストのみ）"""
+    try:
+        # システムプロンプトを取得
+        system_prompt = SPEAKER_PROMPTS.get(voice_id, "あなたは親切なアシスタントです。")
+        print(f"使用するシステムプロンプト: {system_prompt}")
+
+        print(f"{selected_ai_model}で応答を生成中...")
+
+        model_name = ""
+        # LiteLLMのモデル名指定 (2025年5月時点での推奨/一般的なモデル名)
+        if selected_ai_model == "gemini":
+            model_name = "gemini/gemini-2.0-flash"
+        elif selected_ai_model == "claude-sonnet": # "claude-sonnet-3.7" の代わりに一般的なSonnetを指定
+            model_name = "claude-3-5-sonnet-20240620" # Claude 3.5 Sonnet (最新のSonnetを確認してください)
+        elif selected_ai_model == "openai-gpt-4o":
+            model_name = "gpt-4o"
+        else:
+            raise ValueError("無効なAIモデルが選択されました。")
+
+        # メッセージの構築（テキストのみ）
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message}
+        ]
+
+        # LiteLLM呼び出し
+        print(f"LiteLLM呼び出し: モデル={model_name}")
+        response = completion(
+            model=model_name,
+            messages=messages,
+        )
+
+        # LiteLLMのレスポンス構造に合わせてメッセージを取得
+        ai_message = ""
+        if response.choices and response.choices[0].message and response.choices[0].message.content:
+            ai_message = response.choices[0].message.content.strip()
+        else:
+            raise ValueError("AIからの応答が予期した形式ではありません。")
+
+        return ai_message
+        
+    except Exception as e:
+        print(f"LiteLLM処理エラー: {str(e)}")
+        print(f"LiteLLM詳細エラー: {traceback.format_exc()}")
+        raise e
+
 def kill_process_on_port(port):
     """指定されたポートを使用しているプロセスを終了する"""
-    for proc in psutil.process_iter(['pid', 'name', 'connections']):
+    for proc in psutil.process_iter(['pid', 'name']):
         try:
-            for conn in proc.info.get('connections', []):
+            # net_connections()メソッドを使用
+            for conn in proc.net_connections():
                 if conn.laddr.port == port and conn.status == psutil.CONN_LISTEN:
                     print(f"ポート {port} を使用しているプロセス {proc.info['name']} (PID: {proc.info['pid']}) を終了します。")
                     proc.kill()

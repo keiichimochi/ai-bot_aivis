@@ -1,0 +1,102 @@
+project_name: "ai-bot_aivis"
+description: "音声合成機能付きAIチャットボットのサンプル実装。Gemini 2.0 Flash AIによるチャット機能とAivis Speechによる音声合成を組み合わせている。"
+
+current_version: "2.0.0"
+last_updated: "2025-05-23"
+
+features:
+  completed:
+    - name: "基本チャット機能"
+      description: "Gemini 2.0 Flash APIによるテキストチャット"
+      status: "DONE"
+    - name: "音声合成システム"
+      description: "Aivis Speechによる音声生成と再生"
+      status: "DONE"
+    - name: "キャラクターシステム"
+      description: "複数キャラクター（コロ助、桜木、山岡、アンネリ）の性格設定"
+      status: "DONE"
+    - name: "画像アップロード機能"
+      description: "カメラ撮影・ライブラリ選択による画像アップロード"
+      status: "DONE"
+    - name: "画像解析機能"
+      description: "Gemini Vision APIによる画像内容の詳細説明"
+      status: "DONE"
+    - name: "画像のみ送信機能"
+      description: "テキストなしでも画像だけで質問可能"
+      status: "DONE"
+    - name: "画像圧縮システム"
+      description: "5MB制限対応の自動画像圧縮（WebP/JPEG対応）"
+      status: "DONE"
+    - name: "iPhone互換性"
+      description: "iOSでの音声再生とカメラアクセス対応"
+      status: "DONE"
+    - name: "Gemini 2.0 Flash対応"
+      description: "最新のGemini 2.0 Flash APIに更新"
+      status: "DONE"
+
+  in_progress:
+    - name: "レスポンシブデザイン改善"
+      description: "モバイルデバイスでのUI/UX最適化"
+      status: "DOING"
+
+  planned:
+    - name: "チャット履歴保存"
+      description: "ローカルストレージによる会話履歴の保持"
+      status: "TODO"
+    - name: "音声品質設定"
+      description: "音声の速度・音質調整機能"
+      status: "TODO"
+
+technical_stack:
+  backend:
+    - "Python 3.11"
+    - "Flask"
+    - "Google GenerativeAI SDK"
+    - "LiteLLM"
+    - "Aivis Speech API"
+  frontend:
+    - "HTML5"
+    - "CSS3"
+    - "Vanilla JavaScript (ES6+)"
+    - "Canvas API"
+  apis:
+    - "Gemini 2.0 Flash"
+    - "Claude 3.5 Sonnet"
+    - "OpenAI GPT-4o"
+    - "Aivis Speech API"
+
+architecture:
+  - "モジュール分離設計"
+  - "REST API"
+  - "Base64音声データ転送"
+  - "リアルタイム画像圧縮"
+  - "エラーハンドリング強化"
+
+performance:
+  - "5MB画像制限対応"
+  - "自動音声データ最適化"
+  - "プロセス自動kill機能"
+  - "iPhone Safari対応"
+
+milestones:
+  - version: "1.0.0"
+    date: "2025-05-20"
+    description: "基本チャット・音声合成機能完成"
+  - version: "1.5.0"
+    date: "2025-05-22"
+    description: "画像アップロード・解析機能追加"
+  - version: "2.0.0"
+    date: "2025-05-23"
+    description: "Gemini 2.0 Flash対応・画像のみ送信機能追加"
+
+next_tasks:
+  - "UI/UX改善"
+  - "パフォーマンス最適化"
+  - "エラーハンドリング強化"
+  - "ドキュメント整備"
+
+notes:
+  - "iPhone Safariでの音声再生問題を解決済み"
+  - "画像圧縮システムで5MB制限をクリア"
+  - "キャラクター別システムプロンプトで個性を表現"
+  - "画像のみ送信でAIが自動的に画像を詳しく説明" 
